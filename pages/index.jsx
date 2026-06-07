@@ -46,7 +46,10 @@ export default function Home() {
           onAdd: async () => {
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/cart/add`, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "X-Frontend-Host": window.location.hostname   // ✅ send shop hostname
+              },
               body: JSON.stringify({
                 client_email: session.user.email,
                 product: p.product,
@@ -54,8 +57,9 @@ export default function Home() {
                 link: p.link,
                 price: p.price,
                 qty: 1
-              }),
+              })
             });
+
             setCartVersion(v => v + 1);
             setProductCounts(prev => ({
               ...prev,
