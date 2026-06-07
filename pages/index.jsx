@@ -9,7 +9,7 @@ export default function Home() {
   const [chatInput, setChatInput] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const [cartVersion, setCartVersion] = useState(0);
-  const [visibleCounts, setVisibleCounts] = useState({}); // ✅ per-batch pagination
+  const [visibleCounts, setVisibleCounts] = useState({});
   const [productCounts, setProductCounts] = useState({});
 
   const chatEndRef = useRef(null);
@@ -24,17 +24,19 @@ export default function Home() {
     setChatInput("");
 
     try {
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat-bot/chat`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: chatInput })
-
-
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat-bot/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Frontend-Host": window.location.hostname   // ✅ send shop hostname
+        },
+        body: JSON.stringify({ message: chatInput })
       });
+
       const data = await res.json();
 
       if (data.reply?.products && Array.isArray(data.reply.products)) {
-        const batchId = Date.now(); // ✅ unique batch per query
+        const batchId = Date.now();
         const botMessages = data.reply.products.map(p => ({
           role: "bot",
           batchId,
@@ -51,7 +53,7 @@ export default function Home() {
                 "X-Frontend-Host": window.location.hostname   // ✅ send shop hostname
               },
               body: JSON.stringify({
-                client_email: session.user.email,
+                client_email: session?.user?.email,
                 product: p.product,
                 details: p.details,
                 link: p.link,
@@ -67,9 +69,8 @@ export default function Home() {
             }));
           }
         }));
-        setChatHistory([...newHistory, ...botMessages]);
 
-        // ✅ initialize visible count for this batch to show first 5 products
+        setChatHistory([...newHistory, ...botMessages]);
         setVisibleCounts(prev => ({ ...prev, [batchId]: 5 }));
       } else {
         const lastAIMessage = data?.reply?.content ?? "No responses received";
@@ -84,18 +85,19 @@ export default function Home() {
   const handleLoadMore = (batchId) => {
     setVisibleCounts(prev => ({
       ...prev,
-      [batchId]: (prev[batchId] || 5) + 5 // load 5 more each time
+      [batchId]: (prev[batchId] || 5) + 5
     }));
   };
 
-  // find latest batchId
   const latestBatchId = Math.max(0, ...chatHistory.filter(m => m.batchId).map(m => m.batchId));
 
   return (
     <div style={{ backgroundColor: "#ffffff", color: "black" }}>
       {!session ? (
-        <button onClick={() => signIn("google")}
-          style={{ width: "680px", height: "500px", borderRadius: "12px", backgroundColor: "#01811d", color: "white" }}>
+        <button
+          onClick={() => signIn("google")}
+          style={{ width: "680px", height: "500px", borderRadius: "12px", backgroundColor: "#01811d", color: "white" }}
+        >
           Sign in
         </button>
       ) : (
@@ -119,24 +121,28 @@ export default function Home() {
               if (msg.role === "bot" && msg.product) {
                 const count = visibleCounts[msg.batchId] || 0;
                 const indexInBatch = chatHistory.filter(m => m.batchId === msg.batchId).indexOf(msg);
-                if (indexInBatch >= count) return null; // ✅ paginate per batch
+                if (indexInBatch >= count) return null;
                 return (
                   <div key={idx} style={{ marginTop: "10px", backgroundColor: "#000000", color: "white", borderRadius: "20px", padding: "8px" }}>
                     <div style={{ backgroundColor: "#fff", width: "340px", border: "2px solid #051124", borderRadius: "20px", padding: "10px" }}>
                       <strong>{msg.product}</strong>
-                      {msg.details && <div style={{ color: "#333" }}>{msg.details}</div>}  {/* show details separately */}
+                      {msg.details && <div style={{ color: "#333" }}>{msg.details}</div>}
                       {msg.price && <div style={{ color: "#006400" }}>EGP {msg.price}</div>}
                       {msg.image && (
                         <Image
                           src={msg.image}
                           alt={msg.product}
-                          width={400}          // adjust width to fit your layout
-                          height={200}         // fixed height for consistency
-                          style={{ objectFit: "contain" }} // keeps aspect ratio
+                          width={400}
+                          height={200}
+                          style={{ objectFit: "contain" }}
                         />
-                      )}                      {msg.cartLink && (
+                      )}
+                      {msg.cartLink && (
                         <div style={{ position: "relative" }}>
-                          <button onClick={msg.onAdd} style={{ width: "90px", height: "37px", borderRadius: "12px", backgroundColor: "#FFD700", color: "black" }}>
+                          <button
+                            onClick={msg.onAdd}
+                            style={{ width: "90px", height: "37px", borderRadius: "12px", backgroundColor: "#FFD700", color: "black" }}
+                          >
                             Add to Cart
                           </button>
                           {productCounts[msg.product] > 0 && (
@@ -164,28 +170,34 @@ export default function Home() {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input bar with More + Send */}
+          {/* Input bar */}
           <form onSubmit={handleChatSubmit} style={{
             display: "flex", alignItems: "center", width: "360px",
             border: "2px solid #011d0d", borderRadius: "35px", backgroundColor: "#031425", overflow: "hidden"
           }}>
-            {/* More button on left for latest batch */}
             {latestBatchId > 0 &&
               chatHistory.filter(m => m.batchId === latestBatchId).length > (visibleCounts[latestBatchId] || 0) && (
-                <button type="button" onClick={() => handleLoadMore(latestBatchId)}
-                  style={{ width: "70px", height: "70px", backgroundColor: "#0066cc", border: "none", borderRight: "2px solid #011d0d", color: "white", fontSize: "14px" }}>
+                <button
+                  type="button"
+                  onClick={() => handleLoadMore(latestBatchId)}
+                  style={{ width: "70px", height: "70px", backgroundColor: "#0066cc", border: "none", borderRight: "2px solid #011d0d", color: "white", fontSize: "14px" }}
+                >
                   More
                 </button>
               )}
 
-            {/* Input in middle */}
-            <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
               placeholder="Ask about any products..."
-              style={{ flexGrow: 1, height: "70px", fontSize: "14px", border: "none", outline: "none", paddingLeft: "12px", backgroundColor: "#031425", color: "#fbfcfd" }} />
+              style={{ flexGrow: 1, height: "70px", fontSize: "14px", border: "none", outline: "none", paddingLeft: "12px", backgroundColor: "#031425", color: "#fbfcfd" }}
+            />
 
-            {/* Send button on right */}
-            <button type="submit"
-              style={{ width: "70px", height: "70px", backgroundColor: "#01811d", border: "none", borderLeft: "2px solid #011d0d", color: "white", fontSize: "14px" }}>
+            <button
+              type="submit"
+              style={{ width: "70px", height: "70px", backgroundColor: "#01811d", border: "none", borderLeft: "2px solid #011d0d", color: "white", fontSize: "14px" }}
+            >
               Send
             </button>
           </form>
