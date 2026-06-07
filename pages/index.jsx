@@ -182,7 +182,7 @@ export default function Home() {
                   onClick={() => handleLoadMore(latestBatchId)}
                   style={{ width: "70px", height: "70px", backgroundColor: "#0066cc", border: "none", borderRight: "2px solid #011d0d", color: "white", fontSize: "14px" }}
                 >
-                  More
+                  More+
                 </button>
               )}
 
