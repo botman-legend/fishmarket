@@ -27,10 +27,13 @@ export default function Home() {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat-bot/chat`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-Frontend-Host": window.location.hostname   // ✅ send shop hostname
+          "Content-Type": "application/json"
+          // ❌ remove X-Frontend-Host, Railway strips it
         },
-        body: JSON.stringify({ message: chatInput })
+        body: JSON.stringify({
+          message: chatInput,
+          hostname: window.location.hostname   // ✅ send hostname in JSON body
+        })
       });
 
       const data = await res.json();
