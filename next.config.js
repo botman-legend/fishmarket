@@ -22,7 +22,7 @@ module.exports = {
   images: {
     domains: [
       "elfarblobprod.blob.core.windows.net", // ✅ blob storage domain for product images
-      "https://img.freepik.com/premium-photo/thinking-robot-white-humanoid-robot"
+      "img.freepik.com"
     ],
   },
 };
