@@ -22,7 +22,8 @@ module.exports = {
   images: {
     domains: [
       "elfarblobprod.blob.core.windows.net", // ✅ blob storage domain for product images
-      "img.freepik.com"
+      "img.freepik.com",
+      "fishmarket.botsmen.com"
     ],
   },
 };
